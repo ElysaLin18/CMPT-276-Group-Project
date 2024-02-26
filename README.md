@@ -69,8 +69,8 @@ Future stories that may be developed include, login and user creation, permissio
 Outlook Web API  
 The Outlook Web API provides programmatic access to Outlook mail, calendars, contacts, and tasks, allowing developers to integrate Microsoft's mail, calendar, contacts, and task services into their applications. It supports operations like reading, composing, and sending emails, managing calendar events, and accessing contacts and tasks.
 
-Some Motivational Quote API  
-A Motivational Quote API typically offers access to a wide collection of inspirational and motivational quotes from various authors and public figures. Developers can use it to fetch random or specific quotes to integrate into applications for user inspiration and motivation.
+Zen Quotes API  
+The Zen Quotes API offers access to a wide collection of inspirational and motivational quotes from various authors, public figures, religious figures, etc. It can be used to fetch quotes for the daily motivational quote feature of the application.
 
 Web Animations API  
 The Web Animations API allows for more powerful and complex animations in web applications, providing a way to create, control, and animate elements directly in the browser without relying on CSS animations or JavaScript libraries. It provides a unified model for animations, enabling scriptable animations with more control and efficiency.
@@ -88,7 +88,7 @@ For donors and admins to access different content.
 
 The following sketches visualizes the home screen and donation data visualization.  
 
-![]()
+![Potential views for the app](/donatedesk/UIMockupDraft.jpg)
 *UI Mockup draft*  
 
 The home page (i.e. the first page the user sees when loading the application) features a minimalistic design with the Church’s logo and a daily motivational Bible quote. A menu button is included, featuring options to take the user to other pages. The donation information page features tabulated donation data as well as other insightful data visualizations. In future sketch iterations, other kinds of data visualization options will be explored to suit the client’s needs. 
