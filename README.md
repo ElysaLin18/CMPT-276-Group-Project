@@ -88,7 +88,7 @@ For donors and admins to access different content.
 
 The following sketches visualizes the home screen and donation data visualization.  
 
-![Potential views for the app](/donatedesk/UIMockupDraft.jpg)
+![Potential views for the app](UIMockupDraft.jpg)
 *UI Mockup draft*  
 
 The home page (i.e. the first page the user sees when loading the application) features a minimalistic design with the Church’s logo and a daily motivational Bible quote. A menu button is included, featuring options to take the user to other pages. The donation information page features tabulated donation data as well as other insightful data visualizations. In future sketch iterations, other kinds of data visualization options will be explored to suit the client’s needs. 
