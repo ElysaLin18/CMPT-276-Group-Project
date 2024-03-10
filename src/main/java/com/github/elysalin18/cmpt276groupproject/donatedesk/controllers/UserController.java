@@ -6,7 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.UserRepository;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.User;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.view.RedirectView;
@@ -18,20 +22,21 @@ public class UserController {
     private UserRepository userRepo;
 
     @PostMapping("/users/add")
-    public RedirectView getMethodName(@RequestParam Map<String,String> form) {
+    public String getMethodName(@RequestParam Map<String,String> form, HttpServletRequest request) {
         String newName = form.get("name");
-
-        if (userRepo.existsByName(newName)) {
-            return new RedirectView("/signup.html");
-        }
-
         String newPw = form.get("password");
         String newRole = form.get("role");
 
         User newUser = new User(newName, newPw, newRole);
         userRepo.save(newUser);
         
-        // Redirects to "/users/login/"
-        return new RedirectView("login/");
+        request.getSession().setAttribute("session_user", newUser);
+        return "redirect:/users/login";
+    }
+
+    @GetMapping("/users/logout")
+    public String destroySession(HttpServletRequest request) {
+        request.getSession().invalidate();
+        return "redirect:/users/login";
     }
 }
