@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.UserRepository;
 
@@ -13,24 +14,33 @@ import com.github.elysalin18.cmpt276groupproject.donatedesk.models.User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.view.RedirectView;
-
 
 @Controller
 public class UserController {
     @Autowired
     private UserRepository userRepo;
 
-    @PostMapping("/users/add")
-    public String getMethodName(@RequestParam Map<String,String> form, HttpServletRequest request) {
-        String newName = form.get("name");
-        String newPw = form.get("password");
-        String newRole = form.get("role");
+    @GetMapping("/users/add")
+    public String getSignup(Model model) {
+        model.addAttribute("user", null);
+        return "signup";
+    }
 
-        User newUser = new User(newName, newPw, newRole);
-        userRepo.save(newUser);
+    @PostMapping("/users/add")
+    public String addUser(@RequestParam Map<String,String> formData, Model model, HttpServletRequest request) {     
+        String name = formData.get("name");
+        String password = formData.get("password");
+        String role = formData.get("role");
+
+        if (userRepo.existsByNameAndPassword(name, password)) {
+            model.addAttribute("userFound", true);
+            return "signup";
+        }
+
+        User user = new User(name, password, role);
+        userRepo.save(user);
         
-        request.getSession().setAttribute("session_user", newUser);
+        request.getSession().setAttribute("session_user", user);
         return "redirect:/users/login";
     }
 
