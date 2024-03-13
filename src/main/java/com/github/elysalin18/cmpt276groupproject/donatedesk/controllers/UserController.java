@@ -1,23 +1,21 @@
 package com.github.elysalin18.cmpt276groupproject.donatedesk.controllers;
 
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.UserRepository;
 
-import org.springframework.ui.Model;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.view.RedirectView;
 
 
 @Controller
@@ -25,53 +23,98 @@ public class UserController {
     @Autowired
     private UserRepository userRepo;
 
-    @PostMapping("/users/add")
-    public String getMethodName(@RequestParam Map<String,String> form, HttpServletRequest request) {
-        String newName = form.get("name");
-        String newPw = form.get("password");
-        String newRole = form.get("role");
-
-        User newUser = new User(newName, newPw, newRole);
-        userRepo.save(newUser);
-        
-        request.getSession().setAttribute("session_user", newUser);
-        return "redirect:/users/login";
+    private String getLanding(String role) {
+        return "redirect:/users/" + role;
+    }
+    
+    @GetMapping("/users/add")
+    public String getSignup(Model model) {
+        model.addAttribute("user", null);
+        return "signup";
     }
 
-    @GetMapping("/login")
+    @PostMapping("/users/add")
+    public String addUser(@RequestParam Map<String,String> formData, Model model, HttpServletRequest request) {     
+        String name = formData.get("name");
+        String password = formData.get("password");
+        String role = formData.get("role");
+
+        if (userRepo.existsByNameAndPassword(name, password)) {
+            model.addAttribute("userFound", true);
+            return "signup";
+        }
+
+        User user = new User(name, password, role);
+        userRepo.save(user);
+        
+        request.getSession().setAttribute("session_user", user);
+        return getLanding(role);
+    }
+
+    @GetMapping("/users/login")
     public String getLogin(Model model, HttpServletRequest request, HttpSession session){
         User user = (User) session.getAttribute("session_user");
         if (user == null){
-            return "users/login";
+            return "login";
         }
         else {
-            model.addAttribute("user",user);
-            return "users/protected";
+            return getLanding(user.getRole());
         }
     }
 
-    @PostMapping("/login")
+    @PostMapping("/users/login")
     public String login(@RequestParam Map<String,String> formData, Model model, HttpServletRequest request, HttpSession session){
         // processing login
         String name = formData.get("name");
         String pwd = formData.get("password");
         List<User> userlist = userRepo.findByNameAndPassword(name, pwd);
         if (userlist.isEmpty()){
-            return "users/login";
+            model.addAttribute("userMissing", true);
+            return "login";
         }
         else {
             // success
             User user = userlist.get(0);
             request.getSession().setAttribute("session_user", user);
-            model.addAttribute("user", user);
-            return "users/home_protected";
+            return getLanding(user.getRole());
         }
     }
-
 
     @GetMapping("/users/logout")
     public String destroySession(HttpServletRequest request) {
         request.getSession().invalidate();
         return "redirect:/users/login";
     }
-}    
+
+    @GetMapping({"/users/admin","/users/assistant"})
+    public String getOffice(Model model, HttpServletRequest request) {
+        User user = (User) request.getSession().getAttribute("session_user");
+        if (user == null) {
+            return "redirect:/users/login";
+        } 
+        else if (user.getRole().equals("maintainer")) {
+            return getLanding(user.getRole());
+        }
+
+        if (user.getRole().equals("admin")) {
+            List<User> users = userRepo.findAll();
+            model.addAttribute("userList", users);
+        }
+        
+        model.addAttribute("user", user);
+        return "office";
+    }
+
+    @GetMapping("/users/maintainer")
+    public String getMaintenance(Model model, HttpSession session) {
+        User user = (User) session.getAttribute("session_user");
+        if (user == null) {
+            return "redirect:/users/login";
+        }
+        else if (!user.getRole().equals("maintainer")) {
+            return getLanding(user.getRole());
+        }
+
+        return "maintenance";
+    }
+}
