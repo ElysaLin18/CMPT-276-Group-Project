@@ -1,61 +1,71 @@
 package com.github.elysalin18.cmpt276groupproject.donatedesk.controllers;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.springframework.boot.jackson.JsonObjectDeserializer;
-import org.springframework.boot.jackson.JsonObjectSerializer;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestTemplate;
 
+import com.github.elysalin18.cmpt276groupproject.donatedesk.models.InboxMeta;
+import com.github.elysalin18.cmpt276groupproject.donatedesk.models.EmailMessage;
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.RestClientInterceptor;
+import com.github.elysalin18.cmpt276groupproject.donatedesk.models.Token;
+
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @Controller
 public class EmailController {
 
-    @GetMapping("/email")
-    public String getEmail() {
-        RestClient defaultClient = RestClient.create();
-        // Why do I need an interceptor?
-        defaultClient = defaultClient.mutate().requestInterceptor(new RestClientInterceptor()).build();
-        Map<String, String> account = Map.of("address", "", "password", "");
+    private Token getToken(RestClient client, String address, String password) {
+        Map<String, String> account = Map.of("address", address, "password", password);
+        Token token = client.post().uri("/token").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).body(account).retrieve().body(Token.class);
+        return token;
+    }
+
+    private List<EmailMessage> getEmailList(RestClient client, Token token, String approvedSender, String startDate, String endDate) {
+        List<InboxMeta> inbox = client.get().uri("/messages?page=1").accept(MediaType.APPLICATION_JSON).header("Authorization", "Bearer " + token).retrieve().body(new ParameterizedTypeReference<List<InboxMeta>>() {});
         
-        String response = defaultClient.post().uri("https://api.mail.tm/token").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).body(account).retrieve().body(String.class);
-        JSONObject object = new JSONObject(response);
-        String token = object.getString("token");
-        // todo check all pages
-        response = defaultClient.get().uri("https://api.mail.tm/messages?page=1").accept(MediaType.APPLICATION_JSON).header("Authorization", "Bearer " + token).retrieve().body(String.class);
-        JSONArray messages = new JSONArray(response);
-        
-        List<String> raw = new ArrayList<String>();
-        for (int i = 0; i < messages.length(); i++) {
-            JSONObject messageInfo = messages.getJSONObject(i);
-            // todo filter from address
-            // todo filter isDeleted
-            // todo filter createdAt
-            // todo find replyTo
-            String id = messageInfo.getString("id");
-            response = defaultClient.get().uri("https://api.mail.tm/messages/" + id).accept(MediaType.APPLICATION_JSON).header("Authorization", "Bearer " + token).retrieve().body(String.class);
-            JSONObject message = new JSONObject(response);
-            String text = message.getString("text");
-            raw.add(text);
-        }
-        
-        for (String m : raw) {
-            System.out.println(m);
+        int pageCount = inbox.size();
+        for (int i=2;pageCount == 30; i++) {
+            List<InboxMeta> extraInbox = client.get().uri("/messages?page=" + i).accept(MediaType.APPLICATION_JSON).header("Authorization", "Bearer " + token).retrieve().body(new ParameterizedTypeReference<List<InboxMeta>>() {});
+            inbox.addAll(extraInbox);
+            pageCount = extraInbox.size();
         }
 
-        return "signup";
+        List<EmailMessage> emailList = new ArrayList<EmailMessage>() {};
+        for (InboxMeta meta : inbox) {
+            if (!meta.getIsDeleted() && (approvedSender == "" || meta.getFromAddress().equals(approvedSender)) && (startDate == "" || endDate == "" || meta.dateInequality(startDate, endDate))) {
+                EmailMessage email = client.get().uri("/messages/" + meta.getId()).accept(MediaType.APPLICATION_JSON).header("Authorization", "Bearer " + token).retrieve().body(EmailMessage.class);
+                emailList.add(email);
+            }
+        }
+        
+        return emailList;
+    }
+
+    @GetMapping("/email")
+    public String getEmail() {
+        return "email";
+    }
+
+    @PostMapping("/email")
+    public String extractEmail(@RequestParam Map<String,String> emailInfo) {
+        RestClient client = RestClient.builder().baseUrl("https://api.mail.tm").requestInterceptor(new RestClientInterceptor()).build();
+        Token token = getToken(client, emailInfo.get("address"), emailInfo.get("password"));
+        List<EmailMessage> emailList = getEmailList(client, token, emailInfo.get("approvedSender"), emailInfo.get("startDate"), emailInfo.get("endDate"));
+        
+        for (EmailMessage message : emailList) {
+            System.out.println(message.getText());
+        }
+
+        // Parse text
+        // Create excel
+
+        return "email";
     }
 }
