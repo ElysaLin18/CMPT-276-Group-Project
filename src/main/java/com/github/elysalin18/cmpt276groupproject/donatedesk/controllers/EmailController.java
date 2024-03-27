@@ -7,7 +7,6 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
@@ -65,6 +64,7 @@ public class EmailController {
 
     @GetMapping("/email")
     public String getEmail(HttpSession session) {
+        
         User user = (User) session.getAttribute("session_user"); 
         if (user == null || user.getRole().equals("maintainer")) {
             return "redirect:/users/login";
