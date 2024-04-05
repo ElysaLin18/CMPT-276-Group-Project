@@ -19,8 +19,8 @@
                     <h6 class="col">Enter email info from <a target="_blank" href="https://mail.tm">mail.tm</a> (a temporary email service)</h6>
                 </div>
             </div>
-            <div class="container border border-4 rounded px-5 py-4">
-                <form action="/email" method="post">
+            <div class="container border border-4 rounded px-5 py-4 mb-3">
+                <form action="/email/link" method="post" th:if="${isEmailLinked == null}">
                     <div class="row">
                         <label class="col-auto col-form-label" for="address">Name</label>
                         <div class="col">
@@ -33,6 +33,14 @@
                             <input class="col-auto form-control mb-3" type="password" id="password" name="password" required>
                         </div>
                     </div>
+                    <input class="btn btn-primary px-4 py-2 mb-3" type="submit" value="Link Account">
+                </form>
+                <a class="col-auto" href="/email/unlink" th:if="${isEmailLinked == true}">
+                    <button class="btn btn-secondary px-4 py-2">Unlink Email</button>
+                </a>
+            </div>
+            <div class="container border border-4 rounded px-5 py-4">
+                <form action="/email/extract" method="post">
                     <div class="row">
                         <label class="col-auto col-form-label" for="approvedSender">Approved Sender</label>
                         <div class="col">

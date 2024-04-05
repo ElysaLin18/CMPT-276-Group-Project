@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
@@ -16,10 +17,13 @@ import com.github.elysalin18.cmpt276groupproject.donatedesk.models.RestClientInt
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.Token;
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.User;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 
 @Controller
@@ -63,34 +67,36 @@ public class EmailController {
     }
 
     @GetMapping("/email")
-    public String getEmail(HttpSession session) {
+    public String getEmail(HttpSession session, Model model) {
         
         User user = (User) session.getAttribute("session_user"); 
         if (user == null || user.getRole().equals("maintainer")) {
             return "redirect:/users/login";
         }
 
+        Token token = (Token) session.getAttribute("session_token");
+        if (token == null) {
+            return "email";
+        }
+
+        model.addAttribute("isEmailLinked", true);
         return "email";
     }
 
-    @PostMapping("/email")
-    public String extractEmail(@RequestParam Map<String,String> emailInfo, HttpSession session) {
+    @PostMapping("/email/extract")
+    public String extractEmail(@RequestParam Map<String,String> emailFilter, HttpSession session, Model model) {
         User user = (User) session.getAttribute("session_user");
         if (user == null || user.getRole().equals("maintainer")) {
             return "redirect:/users/login";
         }
-        else if (emailInfo == null) {
-            return "email";
-        }
         
-        RestClient client = RestClient.builder().baseUrl("https://api.mail.tm").requestInterceptor(new RestClientInterceptor()).build();
-        Token token = getToken(client, emailInfo.get("address"), emailInfo.get("password"));
-        
+        Token token = (Token) session.getAttribute("session_token");
         if (token == null) {
             return "email";
         }
         
-        List<EmailMessage> emailList = getEmailList(client, token, emailInfo.get("approvedSender"), emailInfo.get("startDate"), emailInfo.get("endDate"));
+        RestClient client = RestClient.builder().baseUrl("https://api.mail.tm").requestInterceptor(new RestClientInterceptor()).build();
+        List<EmailMessage> emailList = getEmailList(client, token, emailFilter.get("approvedSender"), emailFilter.get("startDate"), emailFilter.get("endDate"));
         
         if (emailList == null) {
             return "email";
@@ -103,6 +109,37 @@ public class EmailController {
         // Parse text
         // Create excel
 
+        model.addAttribute("isEmailLinked", true);
+        return "email";
+    }
+
+    @PostMapping("/email/link")
+    public String linkEmail(@RequestParam Map<String,String> emailInfo, HttpSession session, Model model, HttpServletResponse response) {
+        User user = (User) session.getAttribute("session_user");
+        if (user == null || user.getRole().equals("maintainer")) {
+            return "redirect:/users/login";
+        }
+        else if (emailInfo == null) {
+            return "email";
+        }
+
+        RestClient client = RestClient.builder().baseUrl("https://api.mail.tm").requestInterceptor(new RestClientInterceptor()).build();
+        Token token = getToken(client, emailInfo.get("address"), emailInfo.get("password"));
+        session.setAttribute("session_token", token);
+
+
+        model.addAttribute("isEmailLinked", true);
+        return "email";
+    }
+
+    @GetMapping("/email/unlink")
+    public String unlinkEmail(HttpSession session) {
+        User user = (User) session.getAttribute("session_user");
+        if (user == null || user.getRole().equals("maintainer")) {
+            return "redirect:/users/login";
+        }
+        
+        session.removeAttribute("session_token");
         return "email";
     }
 }
