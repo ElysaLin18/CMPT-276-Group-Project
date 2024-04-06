@@ -3,6 +3,11 @@ package com.github.elysalin18.cmpt276groupproject.donatedesk.controllers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
@@ -12,6 +17,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.InboxMeta;
+import com.github.elysalin18.cmpt276groupproject.donatedesk.models.EmailData;
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.EmailMessage;
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.RestClientInterceptor;
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.Token;
@@ -22,7 +28,6 @@ import jakarta.servlet.http.HttpSession;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestBody;
 
 
 
@@ -66,6 +71,40 @@ public class EmailController {
         }
     }
 
+    private List<EmailData> getEmailData(List<EmailMessage> emailList) {
+        if (emailList == null) {
+            return null;
+        }
+
+        List<EmailData> emailData = new ArrayList<EmailData>() {};
+        for (EmailMessage message : emailList) {
+            String message_f = message.getText().substring(message.getText().indexOf("\n"), message.getText().length()).strip();
+            String[] words = message_f.split(" ");
+            String name = words[0] + " " + words[1];
+            String donor_message = "";
+            if (message_f.toLowerCase().contains("message")) {
+                donor_message = message_f.substring(message_f.toLowerCase().indexOf("message:") + "message:\n".length(), message_f.toLowerCase().indexOf("reference")).trim();
+            }
+            emailData.add(new EmailData(name, message.getCreatedAt(), donor_message, ""));
+        }
+        return emailData;
+    }
+
+    private Workbook getEmailExcel(List<EmailData> emailData) {
+        Workbook wb = new HSSFWorkbook();
+        Sheet sheet = wb.createSheet();
+
+        for (EmailData data : emailData) {
+            Row row = sheet.createRow(sheet.getLastRowNum());
+            row.createCell(0).setCellValue(data.getName());
+            row.createCell(1).setCellValue(data.getDate());
+            row.createCell(2).setCellValue(data.getMessage());
+            row.createCell(3).setCellValue(data.getAddress());
+        }
+
+        return wb;
+    }
+
     @GetMapping("/email")
     public String getEmail(HttpSession session, Model model) {
         
@@ -102,12 +141,11 @@ public class EmailController {
             return "email";
         }
 
-        for (EmailMessage message : emailList) {
-            System.out.println(message.getText());
-        }
-
         // Parse text
+        List<EmailData> emailData = getEmailData(emailList);
+
         // Create excel
+        Workbook wb = getEmailExcel(emailData);
 
         model.addAttribute("isEmailLinked", true);
         return "email";
