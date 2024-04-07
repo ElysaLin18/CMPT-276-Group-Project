@@ -1,5 +1,7 @@
 package com.github.elysalin18.cmpt276groupproject.donatedesk.controllers;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -9,7 +11,9 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +32,7 @@ import jakarta.servlet.http.HttpSession;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 
@@ -92,10 +97,12 @@ public class EmailController {
 
     private Workbook getEmailExcel(List<EmailData> emailData) {
         Workbook wb = new HSSFWorkbook();
-        Sheet sheet = wb.createSheet();
+        Sheet sheet = wb.createSheet("eTransfer");
+
+        sheet.setDefaultColumnWidth(30);
 
         for (EmailData data : emailData) {
-            Row row = sheet.createRow(sheet.getLastRowNum());
+            Row row = sheet.createRow(sheet.getLastRowNum() + 1);
             row.createCell(0).setCellValue(data.getName());
             row.createCell(1).setCellValue(data.getDate());
             row.createCell(2).setCellValue(data.getMessage());
@@ -122,23 +129,23 @@ public class EmailController {
         return "email";
     }
 
-    @PostMapping("/email/extract")
-    public String extractEmail(@RequestParam Map<String,String> emailFilter, HttpSession session, Model model) {
+    @PostMapping(path="/email/extract")
+    public ResponseEntity<byte[]> extractEmail(@RequestParam Map<String,String> emailFilter, HttpSession session) {
         User user = (User) session.getAttribute("session_user");
         if (user == null || user.getRole().equals("maintainer")) {
-            return "redirect:/users/login";
+            return ResponseEntity.status(401).build();
         }
         
         Token token = (Token) session.getAttribute("session_token");
         if (token == null) {
-            return "email";
+            return ResponseEntity.status(401).build();
         }
         
         RestClient client = RestClient.builder().baseUrl("https://api.mail.tm").requestInterceptor(new RestClientInterceptor()).build();
         List<EmailMessage> emailList = getEmailList(client, token, emailFilter.get("approvedSender"), emailFilter.get("startDate"), emailFilter.get("endDate"));
         
         if (emailList == null) {
-            return "email";
+            return ResponseEntity.noContent().build();
         }
 
         // Parse text
@@ -147,8 +154,14 @@ public class EmailController {
         // Create excel
         Workbook wb = getEmailExcel(emailData);
 
-        model.addAttribute("isEmailLinked", true);
-        return "email";
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            wb.write(stream);
+            wb.close();
+            return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"email.xlsx\"").contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).body(stream.toByteArray());
+        }
+        catch (IOException exception) {
+            return ResponseEntity.status(500).build();
+        }
     }
 
     @PostMapping("/email/link")
