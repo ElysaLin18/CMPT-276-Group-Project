@@ -4,27 +4,44 @@
     font-family: "Open Sans", sans-serif;
 }
 
-/* body{
-    background: url('img/jordan-wozniak-xP_AGmeEa6s-unsplash.jpg') rgba(0,0,0,0.3);
-    background-blend-mode: multiply;
-    background-position: center;
-    background-size: cover;
-    background-repeat: no-repeat;
-} */
+.logo{
+    font-weight: 550;
+}
 
-.home-body {
+.main-content{
+    background-color: #ffffff;
+}
+
+.main-content {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.form-container{
+    position: relative;
+    max-width: 700px;
+    width: 100%;
+    padding: 25px;
+    padding-top: 85px;
+}
+
+/* Office */
+
+.office-body {
     overflow-y:hidden;
 }
 
-
-.maincontent{
+.office-content{
     background: url('img/dawid-zawila--G3rw6Y02D0-unsplash.jpg') no-repeat center;
     background-size: cover;
     width: 100%;
     height: 100vh;
 }
 
-.maincontent::before{
+.office-content::before{
     background-color: rgba(0,0,0,0.5);
     content: "";
     position: absolute;
@@ -34,33 +51,25 @@
     left: 0;
 }
 
-.maincontent .container{
+.office-content .container{
     height: 120vh;
     z-index: 1;
     position: relative;
 }
 
-.maincontent h1{
+.office-content h1{
     font-size: 1.5em;
     font-family: "Roboto Slab", sans-serif;
 }
 
-.maincontent h2{
+.office-content h2{
     font-size: 0.9em;
     font-family: "Roboto Slab", sans-serif;
 }
 
-@media(max-width: 991px){
-    .sidebar{
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-    }
-}
+/* ------------------------------------- */
 
-.logo{
-    font-weight: 550;
-}
-
+/* Navbar */
 .navbar{
     background-color: #fffffb;
     height: 50px;
@@ -86,6 +95,58 @@
     color: #000;
 }
 
+@media (min-width:991px){
+    .nav-link::before{
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 2px;
+        background-color: #be2d18;
+        visibility: hidden;
+        transition: 0.13s ease-in-out;
+    }
+
+    .nav-link:hover::before, .nav-link.active::before{
+        width: 100%;
+        visibility: visible;
+    }
+}
+
+@media(max-width: 991px){
+    .sidebar{
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+    }
+}
+
+/* ------------------------------------- */
+
+/* Button */
+.nwrc-btn-logout{
+    background-color: #be2d18;
+    color: #fff;
+    font-size: 14px;
+    padding: 8px 20px;
+}
+
+.nwrc-btn-logout:hover{
+    background-color: #7a1d0f;
+}
+
+.nwrc-btn{
+    background-color: #be2d18;
+    color: #fff;
+    padding: 8px 20px;
+}
+
+.nwrc-btn:hover{
+    background-color: #7a1d0f;
+}
+
+/* ------------------------------------- */
 /* .nav-link::after{
     opacity: 0;
     transition: all 0.3s ease-in-out;
@@ -103,46 +164,10 @@
 
 } */
 
-.logout-button{
-    background-color: #be2d18;
-    color: #fff;
-    font-size: 14px;
-    padding: 8px 20px;
-}
-
-.logout-button:hover{
-    background-color: #7a1d0f;
-}
-
-.login-button{
-    background-color: #be2d18;
-    color: #fff;
-    padding: 8px 20px;
-}
-
-.login-button:hover{
-    background-color: #7a1d0f;
-}
-
-
-
-@media (min-width:991px){
-    .nav-link::before{
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 0;
-        height: 2px;
-        background-color: #7a1d0f;
-        visibility: hidden;
-        transition: 0.18s ease-in-out;
-    }
-
-    .nav-link:hover::before, .nav-link.active::before{
-        width: 100%;
-        visibility: visible;
-    }
-}
-
+/* body{
+    background: url('img/jordan-wozniak-xP_AGmeEa6s-unsplash.jpg') rgba(0,0,0,0.3);
+    background-blend-mode: multiply;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+} */
