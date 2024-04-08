@@ -4,6 +4,17 @@
     font-family: "Open Sans", sans-serif;
 }
 
+ul{
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    line-height: 35px;
+}
+
+.line {
+    border-bottom: 1px solid #dee2e6;
+  }
+
 .logo{
     font-weight: 550;
 }
@@ -35,7 +46,7 @@
 }
 
 .office-content{
-    background: url('img/dawid-zawila--G3rw6Y02D0-unsplash.jpg') no-repeat center;
+    background: url('../img/dawid-zawila--G3rw6Y02D0-unsplash.jpg') no-repeat center;
     background-size: cover;
     width: 100%;
     height: 100vh;
@@ -87,7 +98,7 @@
 }
 
 .nav-link{
-    color: #333333;
+    color: #696969;
     position: relative;
 }
 
@@ -106,7 +117,7 @@
         height: 2px;
         background-color: #be2d18;
         visibility: hidden;
-        transition: 0.13s ease-in-out;
+        transition: 0.09s ease-in-out;
     }
 
     .nav-link:hover::before, .nav-link.active::before{
@@ -144,6 +155,37 @@
 
 .nwrc-btn:hover{
     background-color: #7a1d0f;
+}
+
+.nwrc-btn-txt{
+    position: relative;
+    background-color: #ffffff;
+    border: none;
+    outline: none;
+    color: #696969;
+}
+.nwrc-btn-txt:hover, .nwrc-btn-txt.active{
+    color: #000;
+}
+
+@media (min-width:991px){
+    .nwrc-btn-txt::before{
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translate(-50%);
+        width: 0;
+        height: 2px;
+        background-color: #be2d18;
+        visibility: hidden;
+        transition: 0.09s ease-in-out;
+    }
+
+    .nwrc-btn-txt:hover::before, .nwrc-btn-txt.active::before{
+        width: 100%;
+        visibility: visible;
+    }
 }
 
 /* ------------------------------------- */
