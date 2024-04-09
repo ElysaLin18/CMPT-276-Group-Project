@@ -15,14 +15,14 @@
                         <button class="btn btn-danger px-4 py-2">Logout</button>
                     </a>
                 </div>
-                <div class="row">
-                    <h6 class="col">Enter email info from <a target="_blank" href="https://mail.tm">mail.tm</a> (a temporary email service)</h6>
-                </div>
             </div>
             <div class="container border border-4 rounded px-5 py-4 mb-3">
-                <form action="/email/link" method="post" th:if="${isEmailLinked == null}">
+                <form th:action="@{/email/link}" method="post" th:if="${isEmailLinked == null}">
                     <div class="row">
-                        <label class="col-auto col-form-label" for="address">Name</label>
+                        <h6 class="col mb-3">Enter email info from <a target="_blank" href="https://mail.tm">mail.tm</a> (a temporary email service)</h6>
+                    </div>
+                    <div class="row">
+                        <label class="col-auto col-form-label" for="address">Address</label>
                         <div class="col">
                             <input class="form-control mb-3" type="text" id="address" name="address" required>
                         </div>
@@ -39,10 +39,11 @@
                     <button class="btn btn-secondary px-4 py-2">Unlink Email</button>
                 </a>
             </div>
-            <div class="container border border-4 rounded px-5 py-4">
-                <form action="/email/extract" method="post">
+            <div class="container border border-4 rounded px-5 py-4 mb-3">
+                <h6 class="col mb-3">Search filter are optional</h6>
+                <form th:action="@{/email/extract}" method="post">
                     <div class="row">
-                        <label class="col-auto col-form-label" for="approvedSender">Approved Sender</label>
+                        <label class="col-auto col-form-label" for="approvedSender">Sender</label>
                         <div class="col">
                             <input class="col-auto form-control mb-3" type="text" id="approvedSender" name="approvedSender">
                         </div>
@@ -57,6 +58,36 @@
                         <label class="col-auto col-form-label" for="endDate">End Date</label>
                         <div class="col">
                             <input class="col-auto form-control mb-3" type="datetime-local" id="endDate" name="endDate">
+                        </div>
+                    </div>
+                    <input class="btn btn-primary px-4 py-2 mb-3" type="submit" value="Download">
+                </form>
+            </div>
+            <div class="container border border-4 rounded px-5 py-4 mb-3">
+                <h6 class="col mb-3">Go to Google consent screen to link Gmail account</h6>
+                <a class="col-auto" href="/oauth2/authorization/google">
+                    <button class="btn btn-primary px-4 py-2">Link GMail</button>
+                </a>
+            </div>
+            <div class="container border border-4 rounded px-5 py-4">
+                <h6 class="col mb-3">Search filter are optional</h6>
+                <form th:action="@{/gmail/extract}" method="post">
+                    <div class="row">
+                        <label class="col-auto col-form-label" for="senderGmail">Sender</label>
+                        <div class="col">
+                            <input class="col-auto form-control mb-3" type="text" id="senderGmail" name="approvedSender">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <label class="col-auto col-form-label" for="startDateGmail">Start Date</label>
+                        <div class="col">
+                            <input class="col-auto form-control mb-3" type="datetime-local" id="startDateGmail" name="startDate">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <label class="col-auto col-form-label" for="endDateGmail">End Date</label>
+                        <div class="col">
+                            <input class="col-auto form-control mb-3" type="datetime-local" id="endDateGmail" name="endDate">
                         </div>
                     </div>
                     <input class="btn btn-primary px-4 py-2 mb-3" type="submit" value="Download">

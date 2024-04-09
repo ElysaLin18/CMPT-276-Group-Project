@@ -2,7 +2,12 @@ package com.github.elysalin18.cmpt276groupproject.donatedesk.controllers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -10,19 +15,26 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.InboxMeta;
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.EmailData;
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.EmailMessage;
+import com.github.elysalin18.cmpt276groupproject.donatedesk.models.GmailInboxMeta;
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.RestClientInterceptor;
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.Token;
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.User;
@@ -34,10 +46,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
-
-
 @Controller
 public class EmailController {
+
+    @Autowired
+    private WebClient webClient;
 
     private Token getToken(RestClient client, String address, String password) {
         Map<String, String> account = Map.of("address", address, "password", password);
@@ -76,6 +89,76 @@ public class EmailController {
         }
     }
 
+    private List<EmailData> getEmailListGmail(String approvedSender, String startDate, String endDate) {
+
+        GmailInboxMeta inboxWrapper;
+
+        if (startDate != "" && endDate != "") {
+            try {
+                DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm");
+                Long start = formatter.parse(startDate).getTime();
+                Long end = formatter.parse(endDate).getTime();
+
+                String dateFilter = "after:" + start + " before:" + end;
+
+                inboxWrapper = webClient.get().uri("https://gmail.googleapis.com/gmail/v1/users/me/messages?q=in:inbox from:" + approvedSender + " " + dateFilter).retrieve().bodyToMono(GmailInboxMeta.class).block();
+            }
+            catch (ParseException exception) {
+                return null;
+            }
+        }
+        else {
+            inboxWrapper = webClient.get().uri("https://gmail.googleapis.com/gmail/v1/users/me/messages?q=in:inbox from:" + approvedSender).retrieve().bodyToMono(GmailInboxMeta.class).block();
+        }
+
+        List<InboxMeta> inbox = inboxWrapper.getMessages();
+        List<EmailData> emailData = new ArrayList<EmailData>() {};
+        for (InboxMeta meta : inbox) {
+            String string = webClient.get().uri("https://gmail.googleapis.com/gmail/v1/users/me/messages/" + meta.getId() + "?format=full").retrieve().bodyToMono(String.class).block();
+            JSONObject object = new JSONObject(string);
+            JSONObject object2 = object.getJSONObject("payload");
+            JSONArray array = object2.getJSONArray("headers");
+
+            String date = "";
+            String address = "";
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject object3 = array.getJSONObject(i);
+                if (object3.getString("name").equals("Date")) {
+                    date = object3.getString("value");
+                }
+                else if (object3.getString("name").equals("Reply-To")) {
+                    address = object3.getString("value");
+                }
+            }
+
+            JSONArray array2 = object2.getJSONArray("parts");
+
+            String text = "";
+            for (int i = 0; i < array2.length(); i++) {
+                JSONObject object3 = array2.getJSONObject(i);
+                if (object3.getString("mimeType").equals("text/plain")) {
+                    JSONObject object4 = object3.getJSONObject("body");
+                    String base64url = object4.getString("data");
+                    text = new String (Base64.getUrlDecoder().decode(base64url), StandardCharsets.UTF_8);
+                }
+            }
+
+            String name = "";
+            if (text.contains(",") && text.contains("has")) {
+                name = text.substring(text.indexOf(",", 0) + 1, text.indexOf("has", 0)).trim();
+            }
+
+            String message = "";
+            if (text.contains("Message:") && text.contains("Reference")) {
+                message = text.substring(text.indexOf("Message:") + "Message:\n".length(), text.lastIndexOf("Reference")).trim();
+            }
+
+            emailData.add(new EmailData(name, date, message, address));
+        }
+
+        return emailData;
+    }
+
     private List<EmailData> getEmailData(List<EmailMessage> emailList) {
         if (emailList == null) {
             return null;
@@ -94,9 +177,10 @@ public class EmailController {
         }
         return emailData;
     }
-
+    
     private Workbook getEmailExcel(List<EmailData> emailData) {
         Workbook wb = new HSSFWorkbook();
+        wb.createName().setNameName("EmailExtract");
         Sheet sheet = wb.createSheet("eTransfer");
 
         sheet.setDefaultColumnWidth(30);
@@ -114,7 +198,6 @@ public class EmailController {
 
     @GetMapping("/email")
     public String getEmail(HttpSession session, Model model) {
-        
         User user = (User) session.getAttribute("session_user"); 
         if (user == null || user.getRole().equals("maintainer")) {
             return "redirect:/users/login";
@@ -129,18 +212,18 @@ public class EmailController {
         return "email";
     }
 
-    @PostMapping(path="/email/extract")
+    @PostMapping("/email/extract")
     public ResponseEntity<byte[]> extractEmail(@RequestParam Map<String,String> emailFilter, HttpSession session) {
         User user = (User) session.getAttribute("session_user");
         if (user == null || user.getRole().equals("maintainer")) {
             return ResponseEntity.status(401).build();
         }
-        
+
         Token token = (Token) session.getAttribute("session_token");
         if (token == null) {
             return ResponseEntity.status(401).build();
         }
-        
+    
         RestClient client = RestClient.builder().baseUrl("https://api.mail.tm").requestInterceptor(new RestClientInterceptor()).build();
         List<EmailMessage> emailList = getEmailList(client, token, emailFilter.get("approvedSender"), emailFilter.get("startDate"), emailFilter.get("endDate"));
         
@@ -148,21 +231,45 @@ public class EmailController {
             return ResponseEntity.noContent().build();
         }
 
-        // Parse text
         List<EmailData> emailData = getEmailData(emailList);
 
-        // Create excel
         Workbook wb = getEmailExcel(emailData);
 
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
             wb.write(stream);
             wb.close();
-            return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"email.xlsx\"").contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).body(stream.toByteArray());
+            return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"email.xls\"").contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).body(stream.toByteArray());
         }
         catch (IOException exception) {
             return ResponseEntity.status(500).build();
         }
     }
+
+    @PostMapping("/gmail/extract")
+    public ResponseEntity<byte[]> gmailExtract(@RequestParam Map<String,String> emailFilter, HttpSession session, @RegisteredOAuth2AuthorizedClient("google") OAuth2AuthorizedClient authorizedClient) {
+        User user = (User) session.getAttribute("session_user");
+        if (user == null || user.getRole().equals("maintainer")) {
+            return ResponseEntity.status(401).build();
+        }
+
+        if (authorizedClient == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        List<EmailData> emailData = getEmailListGmail(emailFilter.get("approvedSender"), emailFilter.get("startDate"), emailFilter.get("endDate"));
+
+        Workbook wb = getEmailExcel(emailData);
+
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
+            wb.write(stream);
+            wb.close();
+            return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"email.xls\"").contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")).body(stream.toByteArray());
+        }
+        catch (IOException exception) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
 
     @PostMapping("/email/link")
     public String linkEmail(@RequestParam Map<String,String> emailInfo, HttpSession session, Model model, HttpServletResponse response) {
@@ -170,7 +277,8 @@ public class EmailController {
         if (user == null || user.getRole().equals("maintainer")) {
             return "redirect:/users/login";
         }
-        else if (emailInfo == null) {
+
+        if (emailInfo == null) {
             return "email";
         }
 
@@ -180,6 +288,20 @@ public class EmailController {
 
 
         model.addAttribute("isEmailLinked", true);
+        return "email";
+    }
+
+    @GetMapping("/login/oauth2/code/google")
+    public String verifyEmail(HttpSession session, Model model) {
+        User user = (User) session.getAttribute("session_user");
+        if (user == null || user.getRole().equals("maintainer")) {
+            return "redirect:/users/login";
+        }
+
+        Token token = (Token) session.getAttribute("session_token");
+        if (token != null) {
+            model.addAttribute("isEmailLinked", true);         
+        }
         return "email";
     }
 
