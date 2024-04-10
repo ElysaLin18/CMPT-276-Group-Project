@@ -12,6 +12,7 @@ import com.github.elysalin18.cmpt276groupproject.donatedesk.models.UserRepositor
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
+import com.github.elysalin18.cmpt276groupproject.donatedesk.models.PasswordValidator;
 import com.github.elysalin18.cmpt276groupproject.donatedesk.models.User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,12 +36,23 @@ public class UserController {
 
     @PostMapping("/users/add")
     public String addUser(@RequestParam Map<String,String> formData, Model model, HttpServletRequest request) {     
+        if (formData == null) {
+            return "signup";
+        }
+
         String name = formData.get("name");
         String password = formData.get("password");
         String role = formData.get("role");
 
-        if (userRepo.existsByNameAndPassword(name, password)) {
-            model.addAttribute("userFound", true);
+        if (name.isEmpty() || password.isEmpty()) {
+            return "signup";
+        }
+        else if (PasswordValidator.isInvalid(password)) {
+            model.addAttribute("addUserError", "Password is insecure must be at least 8 characters, include an uppercase letter and a special character");
+            return "signup";
+        }
+        else if (userRepo.existsByNameAndPassword(name, password)) {
+            model.addAttribute("addUserError", "This user already exists, try logging in instead");
             return "signup";
         }
 
