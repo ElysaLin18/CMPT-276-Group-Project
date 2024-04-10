@@ -34,7 +34,7 @@
                   <a class="nav-link mx-lg-2" href="/email">Mail Extraction</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link mx-lg-2" href="https://excel-web.onrender.com/home.html">File Conversion</a>
+                  <a class="nav-link mx-lg-2" href="https://excel-process-sys.onrender.com/home.html">File Conversion</a>
                 </li>
             </ul>
           </div>
@@ -57,37 +57,5 @@
       </main>
       
       <script src="/js/quote.js"></script>
-        <!-------------------------------------------->
-        <!-- <main class="m-5">
-            <div class="container-fluid">
-                <div class="row justify-content-center">
-                    <div class="col-md-4">
-                        <h1 class="text-center mt-5 mb-4">DonateDesk</h1>
-                        <h2 class="text-center mt-5 mb-4">New Westminster Christian Reformed Church</h2>
-                    </div>
-                </div> 
-            </div>
-            <div class="container mb-3">
-                <div class="row">
-                    <h1 class="col w-100" th:text="|Office ${user.role}|"></h1>
-                    <a class="col-auto" href="/users/logout" role="button">
-                        <button class="btn btn-danger px-4 py-2">Logout</button>
-                    </a>
-                </div>
-            </div>
-            <div class="container border border-4 rounded px-5 py-4">
-                <div class="row mb-2">
-                    <a class="btn btn-primary" role="button" href="https://excel-web.onrender.com/home.html">EXCEL CONVERSION</a>
-                </div>
-                <div class="row container" th:if='${user.role == "admin"}'>
-                    <div class="row" th:each="usr : ${userList}">
-                        <p class="col-md-4" th:text="${usr.name}"></p>
-                        <p class="col" th:text="${usr.role}"></p>
-                        <p class="col-auto" th:if="${#strings.equals(usr.name, user.name)}">(You)</p>
-                    </div>
-                </div>
-            </div> 
-        </main> -->
-        
       </body>
 </html>
