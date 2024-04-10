@@ -46,7 +46,7 @@
                                 <input class="btn btn-primary nwrc-btn" type="submit" value="Sign Up">
                             </div>
                             <div class="d-grid gap-2 justify-content-center" style="padding-top: 10px;">
-                                <p class="text-danger-emphasis" th:if="${userFound}">This user already exists, try logging in instead</p>
+                                <p class="text-danger-emphasis" th:if="${addUserError}" th:text="${addUserError}"></p>
                             </div>
                             <div class="text-center mt-5 mb-4">
                                 Already have an account?

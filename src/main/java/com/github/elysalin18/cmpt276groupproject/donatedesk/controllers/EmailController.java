@@ -152,8 +152,7 @@ public class EmailController {
             if (text.contains("Message:") && text.contains("Reference")) {
                 message = text.substring(text.indexOf("Message:") + "Message:\n".length(), text.lastIndexOf("Reference")).trim();
             }
-
-            emailData.add(new EmailData(name, date, message, address));
+            emailData.add(new EmailData(name, date, message, address, text));
         }
 
         return emailData;
@@ -173,7 +172,7 @@ public class EmailController {
             if (message_f.toLowerCase().contains("message")) {
                 donor_message = message_f.substring(message_f.toLowerCase().indexOf("message:") + "message:\n".length(), message_f.toLowerCase().indexOf("reference")).trim();
             }
-            emailData.add(new EmailData(name, message.getCreatedAt(), donor_message, ""));
+            emailData.add(new EmailData(name, message.getCreatedAt(), donor_message, "", message.getText()));
         }
         return emailData;
     }
@@ -191,6 +190,7 @@ public class EmailController {
             row.createCell(1).setCellValue(data.getDate());
             row.createCell(2).setCellValue(data.getMessage());
             row.createCell(3).setCellValue(data.getAddress());
+            row.createCell(4).setCellValue(data.getText());
         }
 
         return wb;
